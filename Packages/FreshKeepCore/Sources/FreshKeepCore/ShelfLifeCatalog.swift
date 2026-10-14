@@ -137,7 +137,7 @@ public extension ShelfLifeCatalog {
         FoodProfile(id: "pear", name: "Pear", emoji: "🍐", category: .fruit,
                     shelfLife: [.counter: 4, .fridge: 12], recommendedStorage: .fridge,
                     storageTip: "Ripen at room temperature, then chill.", typicalPrice: 180),
-        FoodProfile(id: "papaya", name: "Papaya", emoji: "🧡", category: .fruit,
+        FoodProfile(id: "papaya", name: "Papaya", emoji: "🍈", category: .fruit,
                     shelfLife: [.counter: 3, .fridge: 6], recommendedStorage: .counter,
                     storageTip: "Wrap cut papaya tightly; it absorbs fridge smells.", typicalPrice: 300),
         // Vegetables

@@ -164,7 +164,7 @@ const children = [
 
   h1('8. visionOS Interface (Part B)'),
   p('FreshKeep Spatial follows the visionOS Human Interface Guidelines: a glass window with a sidebar list and detail, an ornament holding the main actions, a volumetric window with 3D content, and a mixed immersive space. Interactive 3D items have input-target and hover-effect components so the system highlights what the user looks at. Text never floats without a glass background to keep it legible against the room.'),
-  ...(has('visionos-main.png') ? image('visionos-main.png', 6.0, 'Figure — FreshKeep Spatial main window in the Apple Vision Pro simulator') : [note('visionOS screenshot')]),
+  ...(has('visionos-window.png') ? image('visionos-window.png', 6.0, 'Figure — FreshKeep Spatial main window in the Apple Vision Pro simulator') : [note('visionOS screenshot')]),
 ];
 
 build(path.join(__dirname, '..', 'FreshKeep_UI_Documentation_IT21244384.docx'), children, 'UI Documentation');

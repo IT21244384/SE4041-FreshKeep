@@ -110,7 +110,7 @@ pres.addSection({ title: 'Solution' });
 // 5. Prototype
 { const s = pres.addSlide({ masterName: 'CONTENT', sectionTitle: 'Solution' });
   s.addText('Working prototype on visionOS', { placeholder: 'title' });
-  img(s, 'visionos-main.png', { x: 0.6, y: 1.5, w: 7.6, h: 5.25, sizing: { type: 'contain', w: 7.6, h: 5.25 } });
+  img(s, 'visionos-window.png', { x: 0.6, y: 1.55, w: 7.7, h: 5.04 });
   const pts = [['RealityKit volume', 'generated 3D shelves, tokens and pot — no asset files'],
     ['Spatial gestures', 'SpatialTapGesture + DragGesture targeted to entities'],
     ['Attachments', 'SwiftUI glass cards floating above 3D items'],
@@ -155,10 +155,10 @@ pres.addSection({ title: 'Market' });
   const rings = [['Beachhead', 'FreshKeep iPhone users who own an Apple Vision Pro — early adopters, home cooks', 2.6, THEME.colors.dk2],
     ['Expansion', 'All Vision Pro households; families who share a kitchen', 4.0, THEME.colors.accent1],
     ['Long term', 'Lighter, cheaper headsets and smart-home partners', 5.4, 'A7DCC0']];
-  [...rings].reverse().forEach(([, , d, col]) => s.addShape(pres.shapes.OVAL, { x: 3.7 - d / 2, y: 4.55 - d / 2, w: d, h: d, fill: { color: col }, line: { color: 'FFFFFF', width: 2 }, objectName: `ring-${++n}` }));
-  text(s, 'Beachhead', { x: 2.2, y: 4.3, w: 3.0, h: 0.5, fontSize: 18, bold: true, color: 'FFFFFF', align: 'center' });
-  text(s, 'Expansion', { x: 2.2, y: 2.85, w: 3.0, h: 0.4, fontSize: 16, bold: true, color: 'FFFFFF', align: 'center' });
-  text(s, 'Long term', { x: 2.2, y: 2.15, w: 3.0, h: 0.4, fontSize: 15, bold: true, color: THEME.colors.dk2, align: 'center' });
+  [...rings].reverse().forEach(([, , d, col]) => s.addShape(pres.shapes.OVAL, { x: 3.7 - d / 2, y: 4.4 - d / 2, w: d, h: d, fill: { color: col }, line: { color: 'FFFFFF', width: 2 }, objectName: `ring-${++n}` }));
+  text(s, 'Beachhead', { x: 2.2, y: 4.15, w: 3.0, h: 0.5, fontSize: 18, bold: true, color: 'FFFFFF', align: 'center' });
+  text(s, 'Expansion', { x: 2.2, y: 2.7, w: 3.0, h: 0.4, fontSize: 16, bold: true, color: 'FFFFFF', align: 'center' });
+  text(s, 'Long term', { x: 2.2, y: 2.0, w: 3.0, h: 0.4, fontSize: 15, bold: true, color: THEME.colors.dk2, align: 'center' });
   rings.forEach(([h, b], i) => { const y = 1.7 + i * 1.6; text(s, h, { x: 7.6, y, w: 5.1, h: 0.45, fontSize: 20, bold: true, color: THEME.colors.dk2 });
     text(s, b, { x: 7.6, y: y + 0.5, w: 5.1, h: 0.9, fontSize: 16, color: '5F6B64' }); });
   notes(s, 'We start with people who already use FreshKeep on iPhone and own a Vision Pro, then grow as headsets get cheaper.'); }
@@ -216,8 +216,9 @@ pres.addSection({ title: 'Technology' });
 // 13. Close
 pres.addSection({ title: 'Close' });
 { const s = pres.addSlide({ masterName: 'DARK', sectionTitle: 'Close' });
-  s.addText('See your food. Save your food.', { placeholder: 'title' });
-  s.addText('Thank you — questions?  ·  github.com/IT21244384/SE4041-FreshKeep', { placeholder: 'body' });
+  s.addText('See it. Save it.', { placeholder: 'title' });
+  s.addText('Thank you — questions?', { placeholder: 'body' });
+  text(s, 'github.com/IT21244384/SE4041-FreshKeep', { x: 0.7, y: 6.6, w: 9, h: 0.4, fontSize: 14, color: 'C8E8D4' });
   img(s, 'app-icon.png', { x: 9.6, y: 2.0, w: 2.9, h: 2.9, rounding: true });
   notes(s, 'Thank you. Happy to take questions or show the prototype again.'); }
 

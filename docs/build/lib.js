@@ -33,9 +33,9 @@ function p(text, opts = {}) {
   return new Paragraph({ children: parts, spacing: { after: 140, line: 300 }, alignment: opts.align || AlignmentType.JUSTIFIED, ...opts.para });
 }
 
-const h1 = (text) => new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text, font: FONT, size: 32, bold: true, color: GREEN })], spacing: { before: 360, after: 180 }, pageBreakBefore: false });
-const h2 = (text) => new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun({ text, font: FONT, size: 28, bold: true, color: GREEN })], spacing: { before: 260, after: 120 } });
-const h3 = (text) => new Paragraph({ heading: HeadingLevel.HEADING_3, children: [new TextRun({ text, font: FONT, size: 24, bold: true })], spacing: { before: 200, after: 100 } });
+const h1 = (text) => new Paragraph({ keepNext: true, heading: HeadingLevel.HEADING_1, children: [new TextRun({ text, font: FONT, size: 32, bold: true, color: GREEN })], spacing: { before: 360, after: 180 }, pageBreakBefore: false });
+const h2 = (text) => new Paragraph({ keepNext: true, heading: HeadingLevel.HEADING_2, children: [new TextRun({ text, font: FONT, size: 28, bold: true, color: GREEN })], spacing: { before: 260, after: 120 } });
+const h3 = (text) => new Paragraph({ keepNext: true, heading: HeadingLevel.HEADING_3, children: [new TextRun({ text, font: FONT, size: 24, bold: true })], spacing: { before: 200, after: 100 } });
 
 const bullet = (text, level = 0) => {
   const para = p(text, { para: { numbering: { reference: 'bullets', level }, spacing: { after: 80, line: 280 } }, align: AlignmentType.LEFT });

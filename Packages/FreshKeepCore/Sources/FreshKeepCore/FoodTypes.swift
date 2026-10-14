@@ -25,7 +25,7 @@ public enum FoodCategory: String, CaseIterable, Codable, Identifiable, Sendable 
     /// SF Symbol name shown next to items of this category.
     public var symbolName: String {
         switch self {
-        case .fruit: "apple.logo"
+        case .fruit: "basket.fill"
         case .vegetable: "carrot.fill"
         case .dairy: "drop.fill"
         case .meat: "fork.knife"

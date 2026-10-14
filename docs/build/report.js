@@ -171,7 +171,7 @@ const children = [
 
   h1('11. Part B — FreshKeep Spatial (visionOS)'),
   p('FreshKeep Spatial reuses the SwiftData model and FreshKeepCore. It offers a glass main window with an ornament, a volumetric “virtual fridge” built from RealityKit entities generated in code (shelves per storage location, tokens coloured by freshness, a cooking pot) and a mixed immersive “expiry timeline”. Users look and pinch to see an item’s floating card, or pinch and drag it into the pot to mark it eaten and get a recipe idea. The concept, competitor analysis, revenue model and go-to-market plan are in the pitch deck.'),
-  ...(has('visionos-main.png') ? image('visionos-main.png', 5.6, 'Figure — FreshKeep Spatial in the Apple Vision Pro simulator') : []),
+  ...(has('visionos-window.png') ? image('visionos-window.png', 5.6, 'Figure — FreshKeep Spatial in the Apple Vision Pro simulator') : []),
 
   h1('12. Use of AI Tools'),
   p('Claude (Anthropic) was used as a coding assistant, as permitted by the brief. It helped scaffold the project structure, CI scripts and asset catalogs, suggested edge cases for tests, and drafted parts of the documentation. I chose the problem, audience and features, reviewed and tested all generated code, and verified facts and shelf-life values. Prompts, outputs and how they were used are recorded in `docs/AI_USAGE_LOG.md` in the repository.'),
@@ -196,10 +196,10 @@ const children = [
 
   pageBreak(),
   h1('Appendix A — User Guide'),
-  ...markdown(path.join(__dirname, '..', 'USER_GUIDE.md'), { shift: 1 }),
+  ...markdown(path.join(__dirname, '..', 'USER_GUIDE.md'), { shift: 2 }),
   pageBreak(),
   h1('Appendix B — Technical Documentation'),
-  ...markdown(path.join(__dirname, '..', 'TECHNICAL.md'), { shift: 1 }),
+  ...markdown(path.join(__dirname, '..', 'TECHNICAL.md'), { shift: 2 }),
 ];
 
 build(path.join(__dirname, '..', 'FreshKeep_Final_Report_IT21244384.docx'), children, 'Final Report');
