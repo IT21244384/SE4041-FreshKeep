@@ -5,7 +5,7 @@ name: Build & Test
 # screenshots and builds the visionOS prototype.
 on:
   push:
-    branches: [main, "feature/**"]
+    branches: [main]
   pull_request:
   workflow_dispatch:
 

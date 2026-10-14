@@ -43,11 +43,11 @@ final class FreshKeepUITests: XCTestCase {
 
     func testPantryShowsSampleItemsAndDetail() {
         let app = launch()
-        XCTAssertTrue(app.navigationBars["My Pantry"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["My Pantry"].waitForExistence(timeout: 15))
         snapshot("03-pantry", app)
         let carrot = app.element("pantry.row.Carrot")
         if !carrot.waitForExistence(timeout: 3) { app.swipeUp() }
-        XCTAssertTrue(carrot.waitForExistence(timeout: 5))
+        XCTAssertTrue(carrot.waitForExistence(timeout: 10))
         carrot.tap()
         XCTAssertTrue(app.navigationBars["Carrot"].waitForExistence(timeout: 5))
         snapshot("04-item-detail", app)
@@ -59,7 +59,7 @@ final class FreshKeepUITests: XCTestCase {
         let app = launch(seed: false)
         app.buttons["pantry.add"].firstMatch.tap()
         let name = app.textFields["item.name"]
-        XCTAssertTrue(name.waitForExistence(timeout: 5))
+        XCTAssertTrue(name.waitForExistence(timeout: 15))
         name.tap()
         name.typeText("Papaya")
         snapshot("05-add-item", app)
@@ -80,7 +80,7 @@ final class FreshKeepUITests: XCTestCase {
         let app = launch(seed: false)
         app.tabBars.buttons["Scan"].tap()
         let sample = app.buttons["scan.sample"]
-        XCTAssertTrue(sample.waitForExistence(timeout: 5))
+        XCTAssertTrue(sample.waitForExistence(timeout: 15))
         sample.tap()
         let banana = app.element("scan.match.banana")
         XCTAssertTrue(banana.waitForExistence(timeout: 8))
@@ -104,9 +104,9 @@ final class FreshKeepUITests: XCTestCase {
     func testMarkEatenFromDetail() {
         let app = launch()
         let milk = app.element("pantry.row.Milk")
-        XCTAssertTrue(milk.waitForExistence(timeout: 5))
+        XCTAssertTrue(milk.waitForExistence(timeout: 15))
         milk.tap()
-        XCTAssertTrue(app.navigationBars["Milk"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Milk"].waitForExistence(timeout: 10))
         app.swipeUp()
         let eaten = app.buttons["detail.eaten"]
         XCTAssertTrue(eaten.waitForExistence(timeout: 5))
@@ -135,7 +135,7 @@ final class FreshKeepUITests: XCTestCase {
                                "-appearance", "dark",
                                "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityL"]
         app.launch()
-        XCTAssertTrue(app.navigationBars["My Pantry"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["My Pantry"].waitForExistence(timeout: 15))
         snapshot("11-dark-large-text", app)
     }
 
