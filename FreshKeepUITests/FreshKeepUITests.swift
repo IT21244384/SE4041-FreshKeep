@@ -45,9 +45,8 @@ final class FreshKeepUITests: XCTestCase {
         let app = launch()
         XCTAssertTrue(app.navigationBars["My Pantry"].waitForExistence(timeout: 15))
         snapshot("03-pantry", app)
-        let carrot = app.element("pantry.row.Carrot")
-        if !carrot.waitForExistence(timeout: 3) { app.swipeUp() }
-        XCTAssertTrue(carrot.waitForExistence(timeout: 10))
+        let carrot = app.scrollTo("pantry.row.Carrot")
+        XCTAssertTrue(carrot.exists)
         carrot.tap()
         XCTAssertTrue(app.navigationBars["Carrot"].waitForExistence(timeout: 5))
         snapshot("04-item-detail", app)
@@ -105,9 +104,8 @@ final class FreshKeepUITests: XCTestCase {
         let app = launch()
         // Banana is the only "Use today" sample item, so its row is always near the top.
         // (List rows are lazy: items further down don't exist until scrolled to.)
-        let banana = app.element("pantry.row.Banana")
-        if !banana.waitForExistence(timeout: 15) { app.swipeUp() }
-        XCTAssertTrue(banana.waitForExistence(timeout: 5))
+        let banana = app.scrollTo("pantry.row.Banana")
+        XCTAssertTrue(banana.exists)
         banana.tap()
         XCTAssertTrue(app.navigationBars["Banana"].waitForExistence(timeout: 10))
         app.swipeUp()
@@ -156,5 +154,17 @@ private extension XCUIApplication {
     /// (a List row can surface as a button or a cell depending on the OS version).
     func element(_ identifier: String) -> XCUIElement {
         descendants(matching: .any).matching(identifier: identifier).firstMatch
+    }
+
+    /// Lists are lazy, so rows below the fold don't exist until scrolled into view.
+    /// Waits for the screen, then swipes up until the element appears (max 6 swipes).
+    func scrollTo(_ identifier: String) -> XCUIElement {
+        let target = element(identifier)
+        if target.waitForExistence(timeout: 10) { return target }
+        for _ in 0..<6 {
+            swipeUp()
+            if target.waitForExistence(timeout: 2) { break }
+        }
+        return target
     }
 }
