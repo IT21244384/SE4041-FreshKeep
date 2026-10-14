@@ -1,0 +1,51 @@
+{
+  "coreTests": 33,
+  "appUnitTests": 19,
+  "uiTests": 10,
+  "passSummary": "62 of 62 passing in CI",
+  "coverage": "83.2% (4,152 of 4,990 lines)",
+  "device": "an iPhone 17 Pro simulator (iOS 26.2)",
+  "xcode": "Xcode 26.3",
+  "suites": [
+    [
+      "FreshKeepCoreTests (package)",
+      "33",
+      "33",
+      "Run on Windows (Swift 6.4.1) and macOS CI"
+    ],
+    [
+      "FreshKeepTests (app unit)",
+      "19",
+      "19",
+      "SwiftData, drafts, scan view model, image pipeline"
+    ],
+    [
+      "FreshKeepUITests",
+      "10",
+      "10",
+      "Flows, screenshots, dark mode + AX text, launch"
+    ]
+  ],
+  "performance": [
+    [
+      "Fetch 500 items (predicate + sort)",
+      "0.013 s",
+      "XCTest measure, iPhone 17 Pro simulator"
+    ],
+    [
+      "App launch (cold, UI-test build)",
+      "3.56 s",
+      "XCTApplicationLaunchMetric on the CI simulator (shared virtual Mac, slower than a device)"
+    ],
+    [
+      "2,000 catalog lookups",
+      "0.019 s (≈10 µs each)",
+      "XCTest measure, Windows laptop (debug build)"
+    ],
+    [
+      "Stored photo size",
+      "≤ 1024 px JPEG",
+      "ImagePipeline test"
+    ]
+  ]
+}

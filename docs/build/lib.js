@@ -194,4 +194,73 @@ function build(file, children, headerTitle) {
   return Packer.toBuffer(doc).then((buf) => { fs.writeFileSync(file, buf); console.log('Wrote', file); });
 }
 
-module.exports = { p, h1, h2, h3, bullet, numbered, table, image, imageRow, cover, toc, build, pageBreak, run, CONTENT_W, IMG, Paragraph, TextRun, AlignmentType };
+/**
+ * Minimal Markdown → docx converter for the repo's .md docs (headings, paragraphs,
+ * bullets, numbered lists, pipe tables, fenced code, images). `shift` demotes headings.
+ */
+function markdown(file, { shift = 0, skipTitle = true } = {}) {
+  const src = fs.readFileSync(file, 'utf8').replace(/\r/g, '');
+  const lines = src.split('\n');
+  const out = [];
+  const heads = [h1, h2, h3, h3, h3];
+  let i = 0;
+  let firstHeading = true;
+  let numRef = 'numbers3';
+  while (i < lines.length) {
+    const line = lines[i];
+    if (!line.trim()) { i++; continue; }
+    if (line.startsWith('```')) {
+      const code = [];
+      i++;
+      while (i < lines.length && !lines[i].startsWith('```')) code.push(lines[i++]);
+      i++;
+      out.push(new Paragraph({ shading: { fill: 'F2F5F1', type: 'clear', color: 'auto' }, spacing: { after: 160 },
+        children: code.flatMap((c, k) => [new TextRun({ text: c || ' ', font: 'Consolas', size: 18, break: k ? 1 : 0 })]) }));
+      continue;
+    }
+    const hm = line.match(/^(#{1,4})\s+(.*)/);
+    if (hm) {
+      if (firstHeading && skipTitle && hm[1].length === 1) { firstHeading = false; i++; continue; }
+      firstHeading = false;
+      out.push(heads[Math.min(hm[1].length - 1 + shift - 1, 4)](hm[2]));
+      numRef = numRef === 'numbers3' ? 'numbers4' : 'numbers3';
+      i++; continue;
+    }
+    const im = line.match(/^!\[[^\]]*\]\(([^)]+)\)/);
+    if (im) { out.push(...image(path.join(path.dirname(file), im[1]), 6.0)); i++; continue; }
+    if (line.startsWith('|')) {
+      const rows = [];
+      while (i < lines.length && lines[i].startsWith('|')) {
+        if (!/^\|\s*-/.test(lines[i])) rows.push(lines[i].split('|').slice(1, -1).map((c) => c.trim()));
+        i++;
+      }
+      out.push(table(rows[0], rows.slice(1)));
+      out.push(new Paragraph({ children: [], spacing: { after: 120 } }));
+      continue;
+    }
+    const bm = line.match(/^(\s*)[*-]\s+(.*)/);
+    if (bm) {
+      let text = bm[2];
+      i++;
+      while (i < lines.length && /^\s{2,}\S/.test(lines[i]) && !/^\s*[*-]\s/.test(lines[i])) text += ' ' + lines[i++].trim();
+      out.push(bullet(text, bm[1].length >= 2 ? 1 : 0));
+      continue;
+    }
+    const nm = line.match(/^\d+\.\s+(.*)/);
+    if (nm) {
+      let text = nm[1];
+      i++;
+      while (i < lines.length && /^\s{2,}\S/.test(lines[i])) text += ' ' + lines[i++].trim();
+      out.push(numbered(text.replace(/\*([^*]+)\*/g, '$1'), numRef));
+      continue;
+    }
+    let text = line.trim();
+    i++;
+    while (i < lines.length && lines[i].trim() && !/^(#|\||[*-]\s|\d+\.\s|```|!\[)/.test(lines[i].trim())) text += ' ' + lines[i++].trim();
+    out.push(p(text.replace(/^>\s*/, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/(^|\s)\*([^*\s][^*]*)\*/g, '$1$2')));
+  }
+  return out;
+}
+
+module.exports = {
+  markdown, p, h1, h2, h3, bullet, numbered, table, image, imageRow, cover, toc, build, pageBreak, run, CONTENT_W, IMG, Paragraph, TextRun, AlignmentType };
