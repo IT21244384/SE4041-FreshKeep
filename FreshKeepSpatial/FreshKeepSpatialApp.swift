@@ -27,7 +27,7 @@ struct FreshKeepSpatialApp: App {
         }
     }
 
-    var body: some Scene {
+    var body: some SwiftUI.Scene {
         WindowGroup(id: SceneID.main) {
             ContentView()
                 .environment(appModel)

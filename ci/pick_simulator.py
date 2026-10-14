@@ -19,7 +19,7 @@ for runtime, devices in data["devices"].items():
         name = device["name"]
         if name.startswith(prefix) and device.get("isAvailable", True):
             # Prefer plain/Pro phones over SE/mini for consistent screenshots.
-            penalty = 1 if any(x in name for x in ("SE", "mini", "Plus", "Max")) else 0
+            penalty = 1 if any(x in name.split() for x in ("SE", "mini", "Plus", "Max", "Air")) or name.endswith("e") else 0
             candidates.append((version(runtime), -penalty, name, device["udid"]))
 
 if not candidates:
