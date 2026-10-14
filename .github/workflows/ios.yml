@@ -1,0 +1,137 @@
+name: Build & Test
+
+# Every push / PR builds FreshKeep on a macOS runner, runs the core package tests,
+# the iOS unit + UI tests in the Simulator, records a demo video, exports the UI test
+# screenshots and builds the visionOS prototype.
+on:
+  push:
+    branches: [main, "feature/**"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  core:
+    name: FreshKeepCore package tests
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select newest Xcode
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
+          echo "Using $XCODE"
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+      - name: swift test
+        working-directory: Packages/FreshKeepCore
+        run: swift test --parallel
+
+  ios:
+    name: iOS app — build, unit & UI tests
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select newest Xcode
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+      - name: Generate Xcode project
+        run: |
+          brew install xcodegen
+          xcodegen generate
+      - name: Pick an iPhone simulator
+        id: sim
+        run: |
+          UDID=$(xcrun simctl list devices available --json | python3 ci/pick_simulator.py iPhone)
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+          # Clean status bar for screenshots.
+          xcrun simctl status_bar "$UDID" override --time "9:41" --batteryLevel 100 --cellularBars 4 || true
+      - name: Test (with screen recording)
+        run: |
+          set -o pipefail
+          mkdir -p build/artifacts
+          xcrun simctl io "${{ steps.sim.outputs.udid }}" recordVideo --codec=h264 --force build/artifacts/ui-tests-demo.mp4 &
+          REC=$!
+          xcodebuild test \
+            -project FreshKeep.xcodeproj \
+            -scheme FreshKeep \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -resultBundlePath build/Results.xcresult \
+            -enableCodeCoverage YES \
+            CODE_SIGNING_ALLOWED=NO | tee build/artifacts/xcodebuild-test.log | xcbeautify || STATUS=$?
+          kill -INT $REC || true
+          sleep 3
+          exit ${STATUS:-0}
+      - name: Export screenshots, coverage and test summary
+        if: always()
+        run: |
+          mkdir -p build/artifacts/screenshots
+          xcrun xcresulttool export attachments --path build/Results.xcresult --output-path build/artifacts/screenshots || true
+          python3 ci/rename_attachments.py build/artifacts/screenshots || true
+          xcrun xccov view --report --only-targets build/Results.xcresult > build/artifacts/coverage.txt || true
+          xcrun xcresulttool get test-results summary --path build/Results.xcresult --compact > build/artifacts/test-summary.json || true
+          xcrun xcresulttool get test-results tests --path build/Results.xcresult --compact > build/artifacts/test-cases.json || true
+          cat build/artifacts/coverage.txt || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-test-artifacts
+          path: build/artifacts
+
+  visionos:
+    name: visionOS prototype — build & screenshot
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select newest Xcode
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+          xcrun simctl list runtimes
+      - name: Ensure visionOS simulator runtime
+        run: |
+          if ! xcrun simctl list runtimes | grep -q visionOS; then
+            xcodebuild -downloadPlatform visionOS
+          fi
+      - name: Generate Xcode project
+        run: |
+          brew install xcodegen
+          xcodegen generate
+      - name: Build for visionOS Simulator
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project FreshKeep.xcodeproj \
+            -scheme FreshKeepSpatial \
+            -destination "generic/platform=visionOS Simulator" \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO | xcbeautify
+      - name: Run in Apple Vision Pro simulator and capture
+        run: |
+          mkdir -p build/artifacts
+          UDID=$(xcrun simctl list devices available --json | python3 ci/pick_simulator.py "Apple Vision Pro")
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+          APP=$(find build/DerivedData/Build/Products -name "FreshKeepSpatial.app" -maxdepth 3 | head -1)
+          xcrun simctl install "$UDID" "$APP"
+          xcrun simctl io "$UDID" recordVideo --codec=h264 --force build/artifacts/visionos-demo.mp4 &
+          REC=$!
+          xcrun simctl launch "$UDID" lk.sliit.it21244384.freshkeep.spatial
+          sleep 25
+          xcrun simctl io "$UDID" screenshot build/artifacts/visionos-main.png
+          kill -INT $REC || true
+          sleep 3
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: visionos-artifacts
+          path: build/artifacts
