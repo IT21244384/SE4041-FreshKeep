@@ -78,6 +78,7 @@ jobs:
           xcrun xccov view --report --only-targets build/Results.xcresult > build/artifacts/coverage.txt || true
           xcrun xcresulttool get test-results summary --path build/Results.xcresult --compact > build/artifacts/test-summary.json || true
           xcrun xcresulttool get test-results tests --path build/Results.xcresult --compact > build/artifacts/test-cases.json || true
+          python3 ci/print_failures.py build/artifacts/test-cases.json || true
           cat build/artifacts/coverage.txt || true
       - uses: actions/upload-artifact@v4
         if: always()

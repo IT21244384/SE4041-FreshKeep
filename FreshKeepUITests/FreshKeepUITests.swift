@@ -33,13 +33,11 @@ final class FreshKeepUITests: XCTestCase {
         app.buttons["onboarding.next"].tap()
         XCTAssertTrue(app.staticTexts["Get nudged in time"].waitForExistence(timeout: 3))
         app.buttons["onboarding.next"].tap()
-        // Notification permission alert is handled by the system; dismiss if shown.
-        addUIInterruptionMonitor(withDescription: "Notifications") { alert in
-            alert.buttons.element(boundBy: 1).tap()
-            return true
-        }
-        app.tap()
-        XCTAssertTrue(app.navigationBars["My Pantry"].waitForExistence(timeout: 8))
+        // "Get started" asks for notification permission; the alert belongs to SpringBoard.
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let allow = springboard.alerts.buttons.element(boundBy: 1)
+        if allow.waitForExistence(timeout: 5) { allow.tap() }
+        XCTAssertTrue(app.navigationBars["My Pantry"].waitForExistence(timeout: 10))
         snapshot("02-empty-pantry", app)
     }
 
@@ -51,8 +49,10 @@ final class FreshKeepUITests: XCTestCase {
         if !carrot.waitForExistence(timeout: 3) { app.swipeUp() }
         XCTAssertTrue(carrot.waitForExistence(timeout: 5))
         carrot.tap()
-        XCTAssertTrue(app.buttons["detail.eaten"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Carrot"].waitForExistence(timeout: 5))
         snapshot("04-item-detail", app)
+        app.swipeUp()
+        XCTAssertTrue(app.buttons["detail.eaten"].waitForExistence(timeout: 5))
     }
 
     func testAddItemManually() {
@@ -106,8 +106,15 @@ final class FreshKeepUITests: XCTestCase {
         let milk = app.element("pantry.row.Milk")
         XCTAssertTrue(milk.waitForExistence(timeout: 5))
         milk.tap()
-        app.buttons["detail.eaten"].tap()
-        XCTAssertFalse(app.buttons["detail.eaten"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.navigationBars["Milk"].waitForExistence(timeout: 5))
+        app.swipeUp()
+        let eaten = app.buttons["detail.eaten"]
+        XCTAssertTrue(eaten.waitForExistence(timeout: 5))
+        eaten.tap()
+        // Once eaten, the item is no longer active so the action buttons disappear.
+        let gone = NSPredicate(format: "exists == false")
+        expectation(for: gone, evaluatedWith: eaten)
+        waitForExpectations(timeout: 5)
     }
 
     func testInsightsAndSettings() {

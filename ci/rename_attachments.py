@@ -19,4 +19,11 @@ for test in manifest:
         source = os.path.join(folder, exported)
         if os.path.exists(source):
             os.replace(source, os.path.join(folder, base + ext))
+# Remove characters GitHub artifact upload rejects (quotes, colons, etc.).
+bad = set('"<>:|*?') | {chr(13), chr(10)}
+
+for name in os.listdir(folder):
+    clean = "".join("_" if c in bad else c for c in name)
+    if clean != name:
+        os.replace(os.path.join(folder, name), os.path.join(folder, clean))
 print("Renamed attachments")
