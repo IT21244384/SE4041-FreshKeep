@@ -1,0 +1,94 @@
+# FreshKeep 🥬 — eat it before it's too late
+
+FreshKeep is an iOS app that cuts household food waste. Snap a photo of your groceries and
+on-device AI (Apple **Vision / Core ML**) recognises the food, estimates how long it will
+keep, and can read the best-before date straight off the packaging. FreshKeep then reminds
+you before things expire, suggests recipes that use them up and shows how much food and
+money you have rescued.
+
+The repo also contains **FreshKeep Spatial**, a visionOS prototype with a 3D volumetric
+"virtual fridge" and an immersive expiry timeline (Assignment Part B).
+
+> SE4041 Mobile Application Design & Development — Assignment 02 · Abisheak S (IT21244384)
+
+## Features
+
+| Area | What it does | Tech |
+|---|---|---|
+| Scan food | Recognises fruit, veg and groceries from a photo, ranked by confidence | Vision `VNClassifyImageRequest` (Core ML), FreshKeepCore `FoodMatcher` |
+| Scan label | Reads "BEST BEFORE 12/11/26", "USE BY 12 NOV 2026", MFD vs EXP | Vision text recognition + `ExpiryDateParser` |
+| Pantry | Items grouped by urgency, search, storage filters, swipe/long-press actions | SwiftUI `List`, `NavigationStack`, SwiftData `@Query` |
+| Freshness ring | Custom animated component showing time left | Custom `View`, `@ScaledMetric`, accessibility value |
+| Reminders | "Use soon" and "expires today" notifications | UserNotifications + `ReminderPlanner` |
+| Insights | Rescue rate, money saved (LKR), CO₂e, weekly chart, waste by category | Swift Charts (`BarMark`, `SectorMark`) |
+| Use it up | Recipes ranked by how many soon-to-expire items they rescue | `RecipeSuggester` |
+| Adaptive UI | Tab bar on iPhone, sidebar on iPad, landscape layouts, Dark Mode, Dynamic Type | `NavigationSplitView`, `ViewThatFits`, `AnyLayout` |
+| visionOS | Volumetric fridge (tap, drag-to-pot), immersive timeline, ornaments | RealityKit, `RealityView`, `ImmersiveSpace` |
+
+## Project structure
+
+```
+FreshKeep/              iOS app (SwiftUI, MVVM)
+  App/                  entry point, launch arguments
+  DesignSystem/         theme, FreshnessRing, card modifier, button styles, effects
+  Services/             Vision classifier, label reader, notifications, image pipeline
+  ViewModels/           ScanViewModel, ItemDraft
+  Views/                Pantry, Scan, Insights, Settings, Onboarding
+  Resources/            asset catalog (colours with dark variants, app icon)
+FreshKeepSpatial/       visionOS prototype (RealityKit)
+Shared/                 SwiftData model + sample data used by both apps
+Packages/FreshKeepCore/ platform-independent logic + 33 unit tests
+FreshKeepTests/         iOS unit tests (SwiftData, view models, image pipeline)
+FreshKeepUITests/       UI tests (also export screenshots for the docs)
+ci/  .github/workflows/ CI scripts (build, test, screenshots, demo video)
+docs/                   proposal, UI documentation, final report, user guide, pitch deck
+project.yml             XcodeGen spec (the .xcodeproj is generated)
+```
+
+## Build & run
+
+Requirements: macOS with **Xcode 16 or newer** (iOS 17+ / visionOS 1+ SDKs).
+
+```bash
+brew install xcodegen
+xcodegen generate          # creates FreshKeep.xcodeproj
+open FreshKeep.xcodeproj
+```
+
+Pick the **FreshKeep** scheme and an iPhone simulator (or your iPhone) and press ⌘R.
+For the visionOS prototype pick **FreshKeepSpatial** and the *Apple Vision Pro* simulator.
+
+* No camera in the Simulator? Use **Scan → Try a sample photo**, or drag a photo into the
+  Simulator's Photos app and choose **Photos**.
+* **Settings → Load sample pantry** fills the app with demo data.
+
+### Tests
+
+```bash
+# Core logic (also runs on Linux/Windows Swift toolchains)
+cd Packages/FreshKeepCore && swift test
+
+# iOS unit + UI tests
+xcodebuild test -project FreshKeep.xcodeproj -scheme FreshKeep \
+  -destination 'platform=iOS Simulator,name=iPhone 16'
+```
+
+CI (`.github/workflows/ios.yml`) runs all of the above on every push and uploads UI test
+screenshots, a screen recording, code coverage and a visionOS screenshot as artifacts.
+
+## Privacy
+
+All recognition runs on the device. Photos and pantry data never leave the phone; there is
+no account and no server.
+
+## AI-assisted development
+
+This project was developed with help from Claude (Anthropic) as allowed by the assignment
+brief. Prompts, responses and how they were used are logged in
+[docs/AI_USAGE_LOG.md](docs/AI_USAGE_LOG.md).
+
+## Credits
+
+* Shelf-life values are adapted from USDA FoodKeeper guidance and rounded for home use.
+* Food recognition uses Apple's built-in Vision classifier; no third-party models or images.
+* No third-party Swift packages are used.

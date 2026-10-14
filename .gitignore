@@ -1,0 +1,24 @@
+# Xcode / generated
+*.xcodeproj/
+*.xcworkspace/
+!Packages/**/*.xcworkspace
+DerivedData/
+/build/
+*.xcresult
+xcuserdata/
+FreshKeep/Info.plist
+FreshKeepSpatial/Info.plist
+
+# SwiftPM
+.build/
+.swiftpm/
+Package.resolved
+
+# Docs tooling
+docs/build/node_modules/
+docs/build/*.log
+
+# OS
+.DS_Store
+Thumbs.db
+~$*

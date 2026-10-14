@@ -1,0 +1,132 @@
+# XcodeGen spec — generates FreshKeep.xcodeproj on macOS:
+#   brew install xcodegen && xcodegen generate
+# Keeping the project as YAML avoids merge conflicts in .pbxproj files and lets
+# CI build the project from a clean checkout.
+name: FreshKeep
+options:
+  bundleIdPrefix: lk.sliit.it21244384
+  createIntermediateGroups: true
+  deploymentTarget:
+    iOS: "17.0"
+    visionOS: "1.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Automatic
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    # Colours are exposed by hand in Theme.swift; avoid duplicate generated symbols.
+    ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: NO
+packages:
+  FreshKeepCore:
+    path: Packages/FreshKeepCore
+targets:
+  FreshKeep:
+    type: application
+    platform: iOS
+    sources:
+      - FreshKeep
+      - Shared
+    dependencies:
+      - package: FreshKeepCore
+    info:
+      path: FreshKeep/Info.plist
+      properties:
+        CFBundleDisplayName: FreshKeep
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSRequiresIPhoneOS: true
+        ITSAppUsesNonExemptEncryption: false
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+          UIImageName: LaunchLogo
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: true
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        NSCameraUsageDescription: FreshKeep uses the camera to recognise food and read best-before dates. Photos never leave your device.
+        NSPhotoLibraryUsageDescription: FreshKeep lets you pick a photo of food or a date label to analyse on your device.
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: lk.sliit.it21244384.freshkeep
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        ENABLE_PREVIEWS: YES
+
+  FreshKeepTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [FreshKeepTests]
+    dependencies:
+      - target: FreshKeep
+      - package: FreshKeepCore
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: lk.sliit.it21244384.freshkeep.tests
+
+  FreshKeepUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [FreshKeepUITests]
+    dependencies:
+      - target: FreshKeep
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: lk.sliit.it21244384.freshkeep.uitests
+        TEST_TARGET_NAME: FreshKeep
+
+  FreshKeepSpatial:
+    type: application
+    platform: visionOS
+    sources:
+      - FreshKeepSpatial
+      - Shared
+    dependencies:
+      - package: FreshKeepCore
+    info:
+      path: FreshKeepSpatial/Info.plist
+      properties:
+        CFBundleDisplayName: FreshKeep Spatial
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        ITSAppUsesNonExemptEncryption: false
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: true
+          UIApplicationPreferredDefaultSceneSessionRole: UIWindowSceneSessionRoleApplication
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: lk.sliit.it21244384.freshkeep.spatial
+        TARGETED_DEVICE_FAMILY: "7"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+
+schemes:
+  FreshKeep:
+    build:
+      targets:
+        FreshKeep: all
+    test:
+      gatherCoverageData: true
+      coverageTargets: [FreshKeep]
+      targets:
+        - FreshKeepTests
+        - FreshKeepUITests
+    run:
+      config: Debug
+  FreshKeepSpatial:
+    build:
+      targets:
+        FreshKeepSpatial: all
+    run:
+      config: Debug
