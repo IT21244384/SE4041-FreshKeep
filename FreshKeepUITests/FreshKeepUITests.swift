@@ -103,10 +103,13 @@ final class FreshKeepUITests: XCTestCase {
 
     func testMarkEatenFromDetail() {
         let app = launch()
-        let milk = app.element("pantry.row.Milk")
-        XCTAssertTrue(milk.waitForExistence(timeout: 15))
-        milk.tap()
-        XCTAssertTrue(app.navigationBars["Milk"].waitForExistence(timeout: 10))
+        // Banana is the only "Use today" sample item, so its row is always near the top.
+        // (List rows are lazy: items further down don't exist until scrolled to.)
+        let banana = app.element("pantry.row.Banana")
+        if !banana.waitForExistence(timeout: 15) { app.swipeUp() }
+        XCTAssertTrue(banana.waitForExistence(timeout: 5))
+        banana.tap()
+        XCTAssertTrue(app.navigationBars["Banana"].waitForExistence(timeout: 10))
         app.swipeUp()
         let eaten = app.buttons["detail.eaten"]
         XCTAssertTrue(eaten.waitForExistence(timeout: 5))
