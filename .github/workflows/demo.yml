@@ -85,7 +85,13 @@ jobs:
           REC=$!
           sleep 2
           xcrun simctl launch "$UDID" lk.sliit.it21244384.freshkeep.spatial -demo
-          sleep 75
+          # Screenshots every 2 s as a dependable record of each step.
+          mkdir -p build/video/frames
+          for i in $(seq -w 1 40); do
+            xcrun simctl io "$UDID" screenshot build/video/frames/frame-$i.png > /dev/null 2>&1 || true
+            sips -Z 1600 build/video/frames/frame-$i.png > /dev/null 2>&1 || true
+            sleep 1
+          done
           kill -INT $REC || true
           sleep 4
       - name: Compress

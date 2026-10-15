@@ -41,6 +41,13 @@ struct FreshKeepSpatialApp: App {
         }
         .windowStyle(.volumetric)
         .defaultSize(width: 1.0, height: 0.75, depth: 0.5, in: .meters)
+        // Open beside the main window instead of on top of it.
+        .defaultWindowPlacement { _, context in
+            if let main = context.windows.first(where: { $0.id == SceneID.main }) {
+                return WindowPlacement(.trailing(main))
+            }
+            return WindowPlacement()
+        }
         .modelContainer(container)
 
         ImmersiveSpace(id: SceneID.timeline) {
