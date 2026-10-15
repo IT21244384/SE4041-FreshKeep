@@ -279,9 +279,27 @@ private struct LabelResult: View {
 }
 
 #if DEBUG
-/// Generates a stand-in image so the scan flow can be demoed without a camera.
+/// Sample photos so the scan flow can be demoed without a camera (Simulator).
+/// Real photos dropped into `FreshKeep/Resources/DemoPhotos` (named `demo-food-*.jpg`
+/// or `demo-label-*.jpg`) are used first, cycling on each tap; otherwise a drawn
+/// stand-in image is generated.
 enum SamplePhoto {
+    private static var counter = 0
+
     static func make(for mode: ScanViewModel.Mode) -> UIImage {
+        let prefix = mode == .food ? "demo-food-" : "demo-label-"
+        let photos = ["jpg", "jpeg", "png"]
+            .flatMap { Bundle.main.paths(forResourcesOfType: $0, inDirectory: nil) }
+            .filter { ($0 as NSString).lastPathComponent.hasPrefix(prefix) }
+            .sorted()
+        if !photos.isEmpty, let image = UIImage(contentsOfFile: photos[counter % photos.count]) {
+            counter += 1
+            return image
+        }
+        return drawn(for: mode)
+    }
+
+    private static func drawn(for mode: ScanViewModel.Mode) -> UIImage {
         let renderer = UIGraphicsImageRenderer(size: CGSize(width: 800, height: 600))
         return renderer.image { context in
             UIColor(red: 0.98, green: 0.95, blue: 0.86, alpha: 1).setFill()

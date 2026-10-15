@@ -60,6 +60,7 @@ struct FridgeVolumeView: View {
             try? await Task.sleep(for: .seconds(3))
             cookedMessage = nil
         }
+        .task { await runDemoIfRequested() }
         .onAppear { appModel.isFridgeOpen = true }
         .onDisappear { appModel.isFridgeOpen = false }
     }
@@ -142,6 +143,19 @@ struct FridgeVolumeView: View {
                     layoutVersion += 1
                 }
             }
+    }
+
+    /// `-demo` launch argument: inspect the most urgent item, then cook it.
+    private func runDemoIfRequested() async {
+        guard ProcessInfo.processInfo.arguments.contains("-demo") else { return }
+        try? await Task.sleep(for: .seconds(5))
+        guard let item = items.first else { return }
+        selectedID = item.id
+        try? await Task.sleep(for: .seconds(6))
+        selectedID = nil
+        if let entity = root.children.first(where: { $0.name == item.id.uuidString }) {
+            cook(item, entity: entity)
+        }
     }
 
     private func cook(_ item: PantryItem, entity: Entity) {

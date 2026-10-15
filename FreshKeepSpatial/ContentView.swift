@@ -57,6 +57,21 @@ struct ContentView: View {
             .padding()
             .glassBackgroundEffect()
         }
+        .task { await runDemoIfRequested() }
+    }
+
+    /// `-demo` launch argument: a hands-free tour used to record the demo video in CI,
+    /// since the simulator recording cannot perform gaze-and-pinch gestures.
+    private func runDemoIfRequested() async {
+        guard ProcessInfo.processInfo.arguments.contains("-demo") else { return }
+        try? await Task.sleep(for: .seconds(4))
+        appModel.selectedItemID = items.first?.id
+        try? await Task.sleep(for: .seconds(6))
+        openWindow(id: SceneID.fridge)
+        try? await Task.sleep(for: .seconds(24))
+        await toggleTimeline()
+        try? await Task.sleep(for: .seconds(18))
+        await toggleTimeline()
     }
 
     private func toggleTimeline() async {

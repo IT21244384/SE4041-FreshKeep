@@ -1,0 +1,97 @@
+name: Record demo videos
+
+# Run manually (Actions tab → "Record demo videos" → Run workflow, or `gh workflow run demo.yml`).
+# Records a slow, scripted walkthrough of the iPhone app and a hands-free tour of the
+# visionOS prototype in the simulators, then uploads compressed MP4s for the viva.
+on:
+  workflow_dispatch:
+
+jobs:
+  iphone:
+    name: iPhone demo video
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select newest Xcode
+        run: sudo xcode-select -s "$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)"
+      - name: Generate project
+        run: brew install xcodegen && xcodegen generate
+      - name: Boot iPhone simulator
+        id: sim
+        run: |
+          UDID=$(xcrun simctl list devices available --json | python3 ci/pick_simulator.py iPhone)
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl status_bar "$UDID" override --time "9:41" --batteryLevel 100 --cellularBars 4 || true
+      - name: Build for testing
+        run: |
+          set -o pipefail
+          xcodebuild build-for-testing -project FreshKeep.xcodeproj -scheme FreshKeep \
+            -destination "id=${{ steps.sim.outputs.udid }}" -derivedDataPath build/DD \
+            CODE_SIGNING_ALLOWED=NO | xcbeautify
+      - name: Record walkthrough
+        run: |
+          mkdir -p build/video
+          xcrun simctl io "${{ steps.sim.outputs.udid }}" recordVideo --codec=h264 --force build/video/raw.mp4 &
+          REC=$!
+          sleep 2
+          xcodebuild test-without-building -project FreshKeep.xcodeproj -scheme FreshKeep \
+            -destination "id=${{ steps.sim.outputs.udid }}" -derivedDataPath build/DD \
+            -only-testing:FreshKeepUITests/DemoWalkthrough CODE_SIGNING_ALLOWED=NO | xcbeautify || true
+          kill -INT $REC || true
+          sleep 4
+      - name: Compress
+        run: |
+          avconvert --preset Preset1920x1080 --source build/video/raw.mp4 --output build/video/FreshKeep-iPhone-demo.mp4 || cp build/video/raw.mp4 build/video/FreshKeep-iPhone-demo.mp4
+          rm -f build/video/raw.mp4
+          ls -la build/video
+      - uses: actions/upload-artifact@v4
+        with:
+          name: iphone-demo-video
+          path: build/video
+
+  vision:
+    name: Vision Pro demo video
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select newest Xcode
+        run: |
+          sudo xcode-select -s "$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)"
+          xcrun simctl list runtimes | grep -q visionOS || xcodebuild -downloadPlatform visionOS
+      - name: Generate project
+        run: brew install xcodegen && xcodegen generate
+      - name: Build
+        run: |
+          set -o pipefail
+          xcodebuild build -project FreshKeep.xcodeproj -scheme FreshKeepSpatial \
+            -destination "generic/platform=visionOS Simulator" -derivedDataPath build/DD \
+            CODE_SIGNING_ALLOWED=NO | xcbeautify
+      - name: Record hands-free tour
+        run: |
+          mkdir -p build/video
+          UDID=$(xcrun simctl list devices available --json | python3 ci/pick_simulator.py "Apple Vision Pro")
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+          APP=$(find build/DD/Build/Products -name "FreshKeepSpatial.app" -maxdepth 3 | head -1)
+          xcrun simctl install "$UDID" "$APP"
+          sleep 10
+          xcrun simctl io "$UDID" recordVideo --codec=h264 --force build/video/raw.mp4 &
+          REC=$!
+          sleep 2
+          xcrun simctl launch "$UDID" lk.sliit.it21244384.freshkeep.spatial -demo
+          sleep 75
+          kill -INT $REC || true
+          sleep 4
+      - name: Compress
+        run: |
+          avconvert --preset Preset1920x1080 --source build/video/raw.mp4 --output build/video/FreshKeep-VisionPro-demo.mp4 || cp build/video/raw.mp4 build/video/FreshKeep-VisionPro-demo.mp4
+          rm -f build/video/raw.mp4
+          ls -la build/video
+      - uses: actions/upload-artifact@v4
+        with:
+          name: visionpro-demo-video
+          path: build/video
