@@ -5,6 +5,8 @@ name: Record demo videos
 # visionOS prototype in the simulators, then uploads compressed MP4s for the viva.
 on:
   workflow_dispatch:
+  push:
+    branches: ["demo/**"]   # or push a demo/... branch to record without touching main
 
 jobs:
   iphone:
