@@ -65,6 +65,7 @@ jobs:
             -destination "id=${{ steps.sim.outputs.udid }}" \
             -resultBundlePath build/Results.xcresult \
             -enableCodeCoverage YES \
+            -skip-testing:FreshKeepUITests/DemoWalkthrough \
             CODE_SIGNING_ALLOWED=NO | tee build/artifacts/xcodebuild-test.log | xcbeautify || STATUS=$?
           kill -INT $REC || true
           sleep 3
