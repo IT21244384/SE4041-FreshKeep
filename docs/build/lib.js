@@ -10,10 +10,37 @@ const {
 const FONT = 'Times New Roman';
 const GREEN = '0F6B47';
 const ACCENT = '2BAE66';
-const PAGE_W = 11906; // A4 in DXA
-const MARGIN = 1300;
-const CONTENT_W = PAGE_W - MARGIN * 2;
 const IMG = path.join(__dirname, '..', 'images');
+
+/**
+ * Document look. 'fresh' is the original branded style (A4, green headings, cover page,
+ * header/footer). 'sample' copies the plain lab-report template the student supplied:
+ * US Letter, 1" margins, Times New Roman 12 pt body, blue Word-default headings,
+ * centred bold title block, no cover/header/footer, plain black-bordered tables.
+ */
+const ST = {
+  name: 'fresh', headFont: FONT, pageW: 11906, pageH: 16838, margin: 1300, marginTB: 1200,
+  h1: { size: 32, color: GREEN, before: 360, after: 180 },
+  h2: { size: 28, color: GREEN, before: 260, after: 120 },
+  h3: { size: 24, color: undefined, before: 200, after: 100 },
+  body: { after: 140, line: 300, align: AlignmentType.JUSTIFIED },
+  tableHeaderFill: GREEN, tableHeaderColor: 'FFFFFF', border: 'BFC9C2', captionColor: '5F6B64',
+  bulletIndent: { left: 540, hanging: 270 }, codeShading: 'F2F5F1', headerFooter: true,
+};
+function useStyle(name) {
+  if (name !== 'sample') return;
+  Object.assign(ST, {
+    name: 'sample', headFont: 'Calibri', pageW: 12240, pageH: 15840, margin: 1440, marginTB: 1440,
+    h1: { size: 28, color: '365F91', before: 480, after: 0 },
+    h2: { size: 26, color: '4F81BD', before: 200, after: 0 },
+    h3: { size: 24, color: '4F81BD', before: 200, after: 0 },
+    body: { after: 200, line: 276, align: AlignmentType.LEFT },
+    tableHeaderFill: undefined, tableHeaderColor: undefined, border: '000000', captionColor: '595959',
+    bulletIndent: { left: 360, hanging: 360 }, codeShading: undefined, headerFooter: false,
+  });
+}
+const contentW = () => ST.pageW - ST.margin * 2;
+const CONTENT_W = 11906 - 1300 * 2;
 
 const run = (text, opts = {}) => new TextRun({ text, font: FONT, size: 24, ...opts });
 
@@ -30,12 +57,13 @@ function p(text, opts = {}) {
     last = m.index + token.length;
   }
   if (last < text.length) parts.push(run(text.slice(last), opts.run));
-  return new Paragraph({ children: parts, spacing: { after: 140, line: 300 }, alignment: opts.align || AlignmentType.JUSTIFIED, ...opts.para });
+  return new Paragraph({ children: parts, spacing: { after: ST.body.after, line: ST.body.line }, alignment: opts.align || ST.body.align, ...opts.para });
 }
 
-const h1 = (text) => new Paragraph({ keepNext: true, heading: HeadingLevel.HEADING_1, children: [new TextRun({ text, font: FONT, size: 32, bold: true, color: GREEN })], spacing: { before: 360, after: 180 }, pageBreakBefore: false });
-const h2 = (text) => new Paragraph({ keepNext: true, heading: HeadingLevel.HEADING_2, children: [new TextRun({ text, font: FONT, size: 28, bold: true, color: GREEN })], spacing: { before: 260, after: 120 } });
-const h3 = (text) => new Paragraph({ keepNext: true, heading: HeadingLevel.HEADING_3, children: [new TextRun({ text, font: FONT, size: 24, bold: true })], spacing: { before: 200, after: 100 } });
+const heading = (level, st) => (text) => new Paragraph({ keepNext: true, heading: level, children: [new TextRun({ text, font: ST.headFont, size: st().size, bold: true, color: st().color })], spacing: { before: st().before, after: st().after } });
+const h1 = heading(HeadingLevel.HEADING_1, () => ST.h1);
+const h2 = heading(HeadingLevel.HEADING_2, () => ST.h2);
+const h3 = heading(HeadingLevel.HEADING_3, () => ST.h3);
 
 const bullet = (text, level = 0) => {
   const para = p(text, { para: { numbering: { reference: 'bullets', level }, spacing: { after: 80, line: 280 } }, align: AlignmentType.LEFT });
@@ -45,11 +73,12 @@ const numbered = (text, ref = 'numbers') => p(text, { para: { numbering: { refer
 
 const pageBreak = () => new Paragraph({ children: [new PageBreak()] });
 
-const border = { style: BorderStyle.SINGLE, size: 4, color: 'BFC9C2' };
-const borders = { top: border, bottom: border, left: border, right: border };
+const cellBorders = () => { const b = { style: BorderStyle.SINGLE, size: 4, color: ST.border }; return { top: b, bottom: b, left: b, right: b }; };
 
-/** Table with a green header row. widths are relative weights. */
+/** Table with a styled header row. widths are relative weights. */
 function table(headers, rows, weights) {
+  const CONTENT_W = contentW();
+  const borders = cellBorders();
   const w = weights || headers.map(() => 1);
   const total = w.reduce((a, b) => a + b, 0);
   const cols = w.map((x) => Math.floor((x / total) * CONTENT_W));
@@ -57,10 +86,10 @@ function table(headers, rows, weights) {
   const cell = (text, i, header) => new TableCell({
     borders,
     width: { size: cols[i], type: WidthType.DXA },
-    shading: header ? { fill: GREEN, type: ShadingType.CLEAR, color: 'auto' } : undefined,
+    shading: header && ST.tableHeaderFill ? { fill: ST.tableHeaderFill, type: ShadingType.CLEAR, color: 'auto' } : undefined,
     margins: { top: 70, bottom: 70, left: 110, right: 110 },
     children: String(text).split('\n').map((line) => new Paragraph({
-      children: inline(line, header ? { bold: true, color: 'FFFFFF', size: 21 } : { size: 21 }),
+      children: inline(line, header ? { bold: true, color: ST.tableHeaderColor, size: 21 } : { size: 21 }),
       spacing: { after: 30 },
     })),
   });
@@ -103,12 +132,13 @@ function image(file, widthIn = 6.2, caption) {
   const height = Math.round((h / w) * width);
   const out = [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 120, after: caption ? 40 : 160 },
     children: [new ImageRun({ type: 'png', data, transformation: { width, height } })] })];
-  if (caption) out.push(new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 200 }, children: [run(caption, { italics: true, size: 20, color: '5F6B64' })] }));
+  if (caption) out.push(new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 200 }, children: [run(caption, { italics: true, size: 20, color: ST.captionColor })] }));
   return out;
 }
 
 /** Several images side by side in a borderless table. */
 function imageRow(files, widthIn = 2.0, captions = []) {
+  const CONTENT_W = contentW();
   const colW = Math.floor(CONTENT_W / files.length);
   const none = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
   return new Table({
@@ -121,13 +151,26 @@ function imageRow(files, widthIn = 2.0, captions = []) {
       return new TableCell({ width: { size: colW, type: WidthType.DXA }, borders: { top: none, bottom: none, left: none, right: none },
         children: [
           new Paragraph({ alignment: AlignmentType.CENTER, children: [new ImageRun({ type: 'png', data, transformation: { width, height: Math.round((h / w) * width) } })] }),
-          ...(captions[i] ? [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 120 }, children: [run(captions[i], { italics: true, size: 18, color: '5F6B64' })] })] : []),
+          ...(captions[i] ? [new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 120 }, children: [run(captions[i], { italics: true, size: 18, color: ST.captionColor })] })] : []),
         ] });
     }) })],
   });
 }
 
 function cover({ title, subtitle, docType, extra = [] }) {
+  if (ST.name === 'sample') {
+    // Same title block as the student's template: centred bold 16 pt, then bold labels.
+    const label = (k, v) => new Paragraph({ spacing: { after: ST.body.after, line: ST.body.line }, children: [run(`${k}: `, { bold: true }), run(v)] });
+    return [
+      new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 200, line: 276 }, children: [
+        run('SE4041 – Mobile Application Design and Development', { bold: true, size: 32 }),
+        run(`Assignment 02 – ${title} ${docType}`, { bold: true, size: 32, break: 1 })] }),
+      label('Student Name', 'Abisheak S'),
+      label('Student ID', 'IT21244384'),
+      label('GitHub Repository', 'https://github.com/IT21244384/SE4041-FreshKeep'),
+      ...extra.map(([k, v]) => label(k, v)),
+    ];
+  }
   const lines = [
     new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 600, after: 120 }, children: [run('SRI LANKA INSTITUTE OF INFORMATION TECHNOLOGY', { bold: true, size: 26 })] }),
     new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 80 }, children: [run('Faculty of Computing — BSc (Hons) in Information Technology', { size: 22 })] }),
@@ -151,6 +194,7 @@ function cover({ title, subtitle, docType, extra = [] }) {
 }
 
 function toc() {
+  if (ST.name === 'sample') return [];
   return [
     new Paragraph({ children: [run('Table of Contents', { bold: true, size: 32, color: GREEN })], spacing: { after: 200 } }),
     new TableOfContents('Table of Contents', { hyperlink: true, headingStyleRange: '1-2' }),
@@ -164,17 +208,14 @@ function build(file, children, headerTitle) {
     title: headerTitle,
     features: { updateFields: true },
     styles: {
-      default: { document: { run: { font: FONT, size: 24 } } },
-      paragraphStyles: [
-        { id: 'Heading1', name: 'Heading 1', basedOn: 'Normal', next: 'Normal', quickFormat: true, run: { size: 32, bold: true, font: FONT, color: GREEN }, paragraph: { spacing: { before: 360, after: 180 }, outlineLevel: 0 } },
-        { id: 'Heading2', name: 'Heading 2', basedOn: 'Normal', next: 'Normal', quickFormat: true, run: { size: 28, bold: true, font: FONT, color: GREEN }, paragraph: { spacing: { before: 260, after: 120 }, outlineLevel: 1 } },
-        { id: 'Heading3', name: 'Heading 3', basedOn: 'Normal', next: 'Normal', quickFormat: true, run: { size: 24, bold: true, font: FONT }, paragraph: { spacing: { before: 200, after: 100 }, outlineLevel: 2 } },
-      ],
+      default: { document: { run: { font: FONT, size: 24 }, paragraph: { spacing: { after: ST.body.after, line: ST.body.line } } } },
+      paragraphStyles: [1, 2, 3].map((n) => { const h = ST[`h${n}`]; return { id: `Heading${n}`, name: `Heading ${n}`, basedOn: 'Normal', next: 'Normal', quickFormat: true,
+        run: { size: h.size, bold: true, font: ST.headFont, color: h.color }, paragraph: { keepNext: true, keepLines: true, spacing: { before: h.before, after: h.after }, outlineLevel: n - 1 } }; }),
     },
     numbering: {
       config: [
         { reference: 'bullets', levels: [
-          { level: 0, format: LevelFormat.BULLET, text: '•', alignment: AlignmentType.LEFT, style: { paragraph: { indent: { left: 540, hanging: 270 } } } },
+          { level: 0, format: LevelFormat.BULLET, text: '•', alignment: AlignmentType.LEFT, style: { paragraph: { indent: ST.bulletIndent } } },
           { level: 1, format: LevelFormat.BULLET, text: '◦', alignment: AlignmentType.LEFT, style: { paragraph: { indent: { left: 1000, hanging: 270 } } } },
         ] },
         ...['numbers', 'numbers2', 'numbers3', 'numbers4', 'numbers5'].map((reference) => ({ reference, levels: [
@@ -183,11 +224,11 @@ function build(file, children, headerTitle) {
       ],
     },
     sections: [{
-      properties: { page: { size: { width: PAGE_W, height: 16838 }, margin: { top: 1200, bottom: 1200, left: MARGIN, right: MARGIN } }, titlePage: true },
-      headers: { default: new Header({ children: [new Paragraph({ alignment: AlignmentType.RIGHT, border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: ACCENT, space: 4 } },
+      properties: { page: { size: { width: ST.pageW, height: ST.pageH }, margin: { top: ST.marginTB, bottom: ST.marginTB, left: ST.margin, right: ST.margin } }, titlePage: ST.headerFooter },
+      ...(ST.headerFooter ? { headers: { default: new Header({ children: [new Paragraph({ alignment: AlignmentType.RIGHT, border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: ACCENT, space: 4 } },
         children: [run(`FreshKeep — ${headerTitle}`, { size: 18, color: '5F6B64' })] })] }) },
-      footers: { default: new Footer({ children: [new Paragraph({ tabStops: [{ type: TabStopType.RIGHT, position: CONTENT_W }],
-        children: [run('IT21244384 · SE4041 Assignment 02', { size: 18, color: '5F6B64' }), run('\tPage ', { size: 18, color: '5F6B64' }), new TextRun({ children: [PageNumber.CURRENT], font: FONT, size: 18, color: '5F6B64' })] })] }) },
+      footers: { default: new Footer({ children: [new Paragraph({ tabStops: [{ type: TabStopType.RIGHT, position: contentW() }],
+        children: [run('IT21244384 · SE4041 Assignment 02', { size: 18, color: '5F6B64' }), run('\tPage ', { size: 18, color: '5F6B64' }), new TextRun({ children: [PageNumber.CURRENT], font: FONT, size: 18, color: '5F6B64' })] })] }) } } : {}),
       children,
     }],
   });
@@ -214,7 +255,7 @@ function markdown(file, { shift = 0, skipTitle = true } = {}) {
       i++;
       while (i < lines.length && !lines[i].startsWith('```')) code.push(lines[i++]);
       i++;
-      out.push(new Paragraph({ shading: { fill: 'F2F5F1', type: 'clear', color: 'auto' }, spacing: { after: 160 },
+      out.push(new Paragraph({ shading: ST.codeShading ? { fill: ST.codeShading, type: 'clear', color: 'auto' } : undefined, spacing: { after: 160, line: 240 },
         children: code.flatMap((c, k) => [new TextRun({ text: c || ' ', font: 'Consolas', size: 18, break: k ? 1 : 0 })]) }));
       continue;
     }
@@ -263,4 +304,4 @@ function markdown(file, { shift = 0, skipTitle = true } = {}) {
 }
 
 module.exports = {
-  markdown, p, h1, h2, h3, bullet, numbered, table, image, imageRow, cover, toc, build, pageBreak, run, CONTENT_W, IMG, Paragraph, TextRun, AlignmentType };
+  markdown, useStyle, ST, p, h1, h2, h3, bullet, numbered, table, image, imageRow, cover, toc, build, pageBreak, run, CONTENT_W, IMG, Paragraph, TextRun, AlignmentType };

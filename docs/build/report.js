@@ -1,10 +1,13 @@
 const fs = require('fs');
 const path = require('path');
-const { p, h1, h2, h3, bullet, numbered, table, image, imageRow, cover, toc, build, pageBreak, markdown, IMG, Paragraph, run, AlignmentType } = require('./lib');
+const { p, h1, h2, h3, bullet, numbered, table, image, imageRow, cover, toc, build, pageBreak, markdown, IMG, Paragraph, run, AlignmentType, useStyle, ST } = require('./lib');
+
+// Formatted like the student's lab-report template (plain Word style, blue headings).
+useStyle(process.env.DOC_STYLE || 'sample');
 
 const R = JSON.parse(fs.readFileSync(path.join(__dirname, 'results.json'), 'utf8'));
 const has = (f) => fs.existsSync(path.join(IMG, f));
-const code = (lines) => new Paragraph({ shading: { fill: 'F2F5F1', type: 'clear', color: 'auto' }, spacing: { after: 160 },
+const code = (lines) => new Paragraph({ shading: ST.codeShading ? { fill: ST.codeShading, type: 'clear', color: 'auto' } : undefined, spacing: { after: 160, line: 240 },
   children: lines.map((c, k) => run(c || ' ', { font: 'Consolas', size: 17, break: k ? 1 : 0 })) });
 const shots = (files, caps, w = 1.95) => {
   const f = files.filter(has);
@@ -202,4 +205,4 @@ const children = [
   ...markdown(path.join(__dirname, '..', 'TECHNICAL.md'), { shift: 2 }),
 ];
 
-build(path.join(__dirname, '..', 'FreshKeep_Final_Report_IT21244384.docx'), children, 'Final Report');
+build(path.join(__dirname, '..', process.env.REPORT_OUT || 'IT21244384_SE4041_FreshKeep_Final_Report.docx'), children, 'Final Report');
