@@ -26,6 +26,8 @@ struct FridgeVolumeView: View {
     var body: some View {
         RealityView { content, attachments in
             root.name = "fridgeRoot"
+            // Fill the larger volume (layout is authored for a 1 m wide fridge).
+            root.scale = [1.3, 1.3, 1.3]
             content.add(root)
             root.addChild(SpatialFactory.makeShelves())
             root.addChild(SpatialFactory.makePot(at: potPosition))

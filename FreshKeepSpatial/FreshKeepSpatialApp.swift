@@ -40,7 +40,7 @@ struct FreshKeepSpatialApp: App {
                 .environment(appModel)
         }
         .windowStyle(.volumetric)
-        .defaultSize(width: 1.0, height: 0.75, depth: 0.5, in: .meters)
+        .defaultSize(width: 1.3, height: 1.0, depth: 0.65, in: .meters)
         // Open beside the main window instead of on top of it.
         .defaultWindowPlacement { _, context in
             // In the recorded demo the fridge takes centre stage.
