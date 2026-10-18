@@ -7,6 +7,7 @@ import FreshKeepCore
 struct ContentView: View {
     @Environment(SpatialAppModel.self) private var appModel
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.dismissWindow) private var dismissWindow
     @Environment(\.openImmersiveSpace) private var openImmersiveSpace
     @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
     @Query(filter: #Predicate<PantryItem> { $0.statusRaw == "active" }, sort: \PantryItem.expiresAt)
@@ -63,15 +64,16 @@ struct ContentView: View {
     /// `-demo` launch argument: a hands-free tour used to record the demo video in CI,
     /// since the simulator recording cannot perform gaze-and-pinch gestures.
     private func runDemoIfRequested() async {
-        guard ProcessInfo.processInfo.arguments.contains("-demo") else { return }
+        guard ProcessInfo.processInfo.arguments.contains("-demo"), !appModel.demoStarted else { return }
+        appModel.demoStarted = true
         try? await Task.sleep(for: .seconds(4))
         appModel.selectedItemID = items.first?.id
         try? await Task.sleep(for: .seconds(6))
+        // The fridge opens front and centre; the window steps aside so the volume is in view.
+        // FridgeVolumeView continues the tour (inspect, cook, timeline) and reopens this window.
         openWindow(id: SceneID.fridge)
-        try? await Task.sleep(for: .seconds(24))
-        await toggleTimeline()
-        try? await Task.sleep(for: .seconds(18))
-        await toggleTimeline()
+        try? await Task.sleep(for: .seconds(2))
+        dismissWindow(id: SceneID.main)
     }
 
     private func toggleTimeline() async {

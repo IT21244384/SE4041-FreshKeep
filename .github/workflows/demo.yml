@@ -74,7 +74,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO | xcbeautify
       - name: Record hands-free tour
         run: |
-          mkdir -p build/video build/frames
+          mkdir -p build/video
           UDID=$(xcrun simctl list devices available --json | python3 ci/pick_simulator.py "Apple Vision Pro")
           xcrun simctl boot "$UDID" || true
           xcrun simctl bootstatus "$UDID" -b
@@ -85,26 +85,15 @@ jobs:
           REC=$!
           sleep 3
           xcrun simctl launch "$UDID" lk.sliit.it21244384.freshkeep.spatial -demo
-          START=$(date +%s)
-          # Timestamped JPEG frames as fast as the simulator allows, for a complete
-          # record of every step (the video recorder sometimes drops long stretches).
-          while [ $(( $(date +%s) - START )) -lt 70 ]; do
-            T=$(( $(date +%s) - START ))
-            F=build/frames/t$(printf %03d $T)-$(date +%s%N | cut -c1-13).jpg
-            xcrun simctl io "$UDID" screenshot --type=jpeg "$F" > /dev/null 2>&1 && sips -Z 1600 "$F" > /dev/null 2>&1 || true
-          done
+          # Tour lasts about 55 s (see ContentView / FridgeVolumeView runDemoIfRequested).
+          sleep 62
           kill -INT $REC || true
           sleep 5
-          ls build/frames | wc -l
-          du -sh build/frames build/video
+          ls -la build/video
       - name: Compress
         run: |
           avconvert --preset Preset1920x1080 --source build/video/raw.mp4 --output build/video/FreshKeep-VisionPro-demo.mp4 || cp build/video/raw.mp4 build/video/FreshKeep-VisionPro-demo.mp4
           ls -la build/video
-      - uses: actions/upload-artifact@v4
-        with:
-          name: visionpro-frames
-          path: build/frames
       - uses: actions/upload-artifact@v4
         with:
           name: visionpro-demo-video

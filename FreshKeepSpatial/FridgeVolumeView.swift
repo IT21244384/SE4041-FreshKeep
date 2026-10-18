@@ -9,6 +9,9 @@ import FreshKeepCore
 ///  - pinch + drag: pick an item up and drop it into the cooking pot to mark it eaten.
 struct FridgeVolumeView: View {
     @Environment(SpatialAppModel.self) private var appModel
+    @Environment(\.openWindow) private var openWindow
+    @Environment(\.openImmersiveSpace) private var openImmersiveSpace
+    @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
     @Query(filter: #Predicate<PantryItem> { $0.statusRaw == "active" }, sort: \PantryItem.expiresAt)
     private var items: [PantryItem]
 
@@ -145,17 +148,33 @@ struct FridgeVolumeView: View {
             }
     }
 
-    /// `-demo` launch argument: inspect the most urgent item, then cook it.
+    /// `-demo` launch argument: inspect the most urgent item, carry it to the pot,
+    /// show the expiry timeline, then bring the main window back.
     private func runDemoIfRequested() async {
-        guard ProcessInfo.processInfo.arguments.contains("-demo") else { return }
-        try? await Task.sleep(for: .seconds(5))
+        guard ProcessInfo.processInfo.arguments.contains("-demo"), !appModel.fridgeDemoStarted else { return }
+        appModel.fridgeDemoStarted = true
+        try? await Task.sleep(for: .seconds(4))
         guard let item = items.first else { return }
         selectedID = item.id
-        try? await Task.sleep(for: .seconds(6))
+        try? await Task.sleep(for: .seconds(5))
         selectedID = nil
         if let entity = root.children.first(where: { $0.name == item.id.uuidString }) {
+            // Lift the item and carry it over the pot, as a pinch-and-drag would.
+            let lifted = Transform(scale: entity.scale, rotation: entity.orientation, translation: entity.position + [0, 0.12, 0.08])
+            entity.move(to: lifted, relativeTo: root, duration: 0.8, timingFunction: .easeOut)
+            try? await Task.sleep(for: .seconds(0.9))
+            let overPot = Transform(scale: entity.scale, rotation: entity.orientation, translation: potPosition + [0, 0.14, 0])
+            entity.move(to: overPot, relativeTo: root, duration: 1.4, timingFunction: .easeInOut)
+            try? await Task.sleep(for: .seconds(1.6))
             cook(item, entity: entity)
         }
+        try? await Task.sleep(for: .seconds(6))
+        if case .opened = await openImmersiveSpace(id: SceneID.timeline) { appModel.isTimelineOpen = true }
+        try? await Task.sleep(for: .seconds(16))
+        await dismissImmersiveSpace()
+        appModel.isTimelineOpen = false
+        try? await Task.sleep(for: .seconds(1))
+        openWindow(id: SceneID.main)
     }
 
     private func cook(_ item: PantryItem, entity: Entity) {
