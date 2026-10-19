@@ -34,6 +34,12 @@ public struct Freshness: Equatable, Sendable {
     /// 1.0 when just added, 0.0 at expiry. Drives the freshness ring.
     public let remainingFraction: Double
 
+    public init(level: FreshnessLevel, daysLeft: Int, remainingFraction: Double) {
+        self.level = level
+        self.daysLeft = daysLeft
+        self.remainingFraction = remainingFraction
+    }
+
     /// Human friendly summary such as "3 days left" or "Expired 2 days ago".
     public var summary: String {
         switch daysLeft {
